@@ -1,0 +1,8 @@
+Name	Coef1	Coef2	Coef3	Coef4	Coef5
+PersonVsPlace	1	1	0	-1	-1
+FamPersonVsFamPlace	1	0	0	-1	0
+PersonVsObject	1	1	-2	0	0
+PlaceVsObject	0	0	-2	1	1
+FamVsUnfamPerson	1	-1	0	0	0
+FamVsUnfamPlace	0	0	0	1	-1
+FamVsUnfam	1	-1	0	1	-1

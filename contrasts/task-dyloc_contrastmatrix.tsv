@@ -1,0 +1,4 @@
+Name	Coef1	Coef2	Coef3
+FacesVsScenes	1	0	-1
+FacesVsObjects	1	-1	0
+ScenesVsObjects	0	-1	1
