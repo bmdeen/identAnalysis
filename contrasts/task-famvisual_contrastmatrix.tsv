@@ -6,3 +6,6 @@ PlaceVsObject	0	0	-2	1	1
 FamVsUnfamPerson	1	-1	0	0	0
 FamVsUnfamPlace	0	0	0	1	-1
 FamVsUnfam	1	-1	0	1	-1
+PersonVsPlaceObject	2	2	-2	-1	-1
+PlaceVsPersonObject	-1	-1	-2	2	2
+ObjectVsPersonPlace	-1	-1	4	-1	-1

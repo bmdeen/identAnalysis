@@ -37,8 +37,8 @@ figure('Position',[200 200 125 248]);
 h = dendrogram(Z,'Reorder',flip(leafOrder),'Orientation','right','ColorThreshold',.7);
 set(gcf,'Color',[1 1 1]);
 set(gca,'Visible','off');
-redInd = [1:6 8:11 14];
-blueInd = [7 12 13 15:20];
+redInd = [1:5 7:12];
+blueInd = [6 13:20];
 for i=redInd
     h(i).Color = 'r';
 end
@@ -72,11 +72,11 @@ for i=1:iters
     if mod(i,100)==0, disp(i); end
 end
 spatialDiffs = sort(spatialDiffs);
-ind = min(find(spatialDiffs>.4989));
+ind = min(find(spatialDiffs>.4067));
 
-% Social difference: real value is .7077. Larger than any of the permuted
+% Social difference: real value is .6551. Larger than any of the permuted
 % values. P < .0001.
-% Spatial difference: real value is .4989. Only 4/10000 permuted values are
+% Spatial difference: real value is .4067. Only 4/10000 permuted values are
 % larger. P < .001.
 
 % Sig star info
@@ -84,8 +84,15 @@ groups = {[1 3],[2 3]};
 stats = [0 .0004];
 
 % Bar plot of within- and between-network correlations
-figure('Position',[200 200 140 250]);
-fpp.util.barColor(corrByNetwork,{'r','b','w'},1,[],0);
-set(gca,'FontSize',16);
+% figure('Position',[200 200 140 250]);
+barGraphLW = 3;     % Linewidth
+barGraphFS = 28;    % Font size
+figure('Position',[200 200 280 500]);
+[b,e] = fpp.util.barColor(corrByNetwork,{'r','b','w'},1,[],0);
 ylim([-.15 .69]);
-identSigStar(groups,stats);
+h = identSigStarBigPlot(groups,stats);
+set(gca,'LineWidth',barGraphLW,'FontSize',barGraphFS);
+set(b,'LineWidth',barGraphLW);
+set(b.BaseLine,'LineWidth',barGraphLW);
+set(e,'LineWidth',barGraphLW);
+set(h,'LineWidth',2);

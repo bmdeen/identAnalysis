@@ -4,16 +4,24 @@
 
 function identRestDiffusionPlot(subjID)
 
+% Whether to average statistics across tasks (runs 2 and 4).
+% Default: intersect stats across tasks.
+avgStats = 0;
+avgSuffix = 'Intersect';
+if avgStats, avgSuffix = 'Average'; end
+
 studyDir = '/path/to/data';
 bidsDir = [studyDir '/derivatives/fpp'];
 analysisDir = [bidsDir '/sub-' subjID '/analysis'];
 spaceStr = '_space-fsLR_den-32k';
 diffusionDir = [analysisDir '/sub-' subjID '_task-rest' spaceStr '_diffusion'];
 diffusionMatPath = [diffusionDir '/sub-' subjID '_task-rest' spaceStr '_DiffusionData.mat'];
-zThresh = 2.3;
-scatterSize = 5;    % Scatter plot dot size in points
+zThresh = 2.3;          % Z-stat threshold
+zStatSuffix = ['Z' strrep(num2str(zThresh),'.','p')];
+scatterSize = 5;        % Scatter plot dot size in points
 figSize = 450;
 fontSize = 14;
+rotationAngle = 15;    % Apply this manual rotation (degrees CCW) before plotting
 
 % Load diffusion map
 load(diffusionMatPath);     % Key variable: diffmap
@@ -52,26 +60,58 @@ else
     diffmap = diffmapStd;
 end
 
-% Load z-stat maps
-tasks = {'famvisual','famsemantic','famepisodic'};
-contrasts = {'PersonVsPlace','PlaceVsObject'};
-for t=1:length(tasks)
+% Manually rotate diffmap, to align y-axis with apex gradient for
+% visualization.
+rotationAngle = 15;
+R = [cosd(rotationAngle) -sind(rotationAngle) 0; sind(rotationAngle) cosd(rotationAngle) 0; 0 0 1];
+diffmapRot = diffmap*R';
+
+% Find indices of task-responsive coordinates
+if avgStats
+    % Load z-stat maps
+    task = 'famcombined';
+    contrasts = {'PersonVsPlaceObject','PlaceVsPersonObject','ObjectVsPersonPlace'};
+    analysisSuffix = 'r2r4';
     for c=1:length(contrasts)
-        zStatPath = [analysisDir '/sub-' subjID '_task-' tasks{t}...
-            '_space-individual_res-2_den-32k_desc-Sm2_model2arma/sub-'...
-            subjID '_task-' tasks{t} '_space-individual_res-2_den-32k_desc-Sm2'...
+        zStatPath = [analysisDir '/sub-' subjID '_task-' task...
+            '_space-individual_res-2_den-32k_desc-Sm2' analysisSuffix '_model2arma/sub-'...
+            subjID '_task-' task '_space-individual_res-2_den-32k_desc-Sm2' analysisSuffix...
             contrasts{c} '_zstat.dscalar.nii'];
-        zStatVec{t,c} = fpp.util.readDataMatrix(zStatPath);
-        zStatVec{t,c} = zStatVec{t,c}(1:nCoords);   % Remove subcortical coordinates
+        zStatVec{c} = fpp.util.readDataMatrix(zStatPath);
+        zStatVec{c} = zStatVec{c}(1:nCoords);   % Remove subcortical coordinates
     end
+    
+    % Find indices of coordinates with preferences for people, places, and
+    % objects
+    %if ~exist('personInd','var'), saveInd = 1; else saveInd = 0; end
+    saveInd = 1;
+    personInd = find(zStatVec{1}>zThresh);
+    placeInd = find(zStatVec{2}>zThresh);
+    objectInd = find(zStatVec{3}>zThresh);
+else
+    % Load z-stat maps
+    tasks = {'famvisual','famsemantic','famepisodic'};
+    contrasts = {'PersonVsPlaceObject','PlaceVsPersonObject','ObjectVsPersonPlace'};
+    for t=1:length(tasks)
+        for c=1:length(contrasts)
+            zStatPath = [analysisDir '/sub-' subjID '_task-' tasks{t}...
+                '_space-individual_res-2_den-32k_desc-Sm2_model2arma/sub-'...
+                subjID '_task-' tasks{t} '_space-individual_res-2_den-32k_desc-Sm2'...
+                contrasts{c} '_zstat.dscalar.nii'];
+            zStatVec{t,c} = fpp.util.readDataMatrix(zStatPath);
+            zStatVec{t,c} = zStatVec{t,c}(1:nCoords);   % Remove subcortical coordinates
+        end
+    end
+    
+    % Find indices of coordinates with preferences for people, places, and
+    % objects
+    if ~exist('personInd','var'), saveInd = 1; else saveInd = 0; end
+    saveInd = 1;
+    personInd = find(zStatVec{1,1}>zThresh & zStatVec{2,1}>zThresh & zStatVec{3,1}>zThresh);
+    placeInd = find(zStatVec{1,2}>zThresh & zStatVec{2,2}>zThresh & zStatVec{3,2}>zThresh);
+    objectInd = find(zStatVec{1,3}>zThresh & zStatVec{2,3}>zThresh & zStatVec{3,3}>zThresh);
 end
 
-% Find indices of coordinates with preferences for people, places, and
-% objects
-if ~exist('personInd','var'), saveInd = 1; else saveInd = 0; end
-personInd = find(zStatVec{1,1}>zThresh & zStatVec{2,1}>zThresh & zStatVec{3,1}>zThresh);
-placeInd = find(zStatVec{1,1}<-zThresh & zStatVec{2,1}<-zThresh & zStatVec{3,1}<-zThresh);
-objectInd = find(zStatVec{1,2}<-zThresh & zStatVec{2,2}<-zThresh & zStatVec{3,2}<-zThresh);
 allInd = sort(unique([personInd; placeInd; objectInd]));
 noneInd = setdiff(1:nCoords,allInd);
 if saveInd, save(diffusionMatPath,'-append','personInd','placeInd','objectInd'); end
@@ -82,15 +122,15 @@ disp(['# Place Coords: ' int2str(length(placeInd))]);
 disp(['# Object Coords: ' int2str(length(objectInd))]);
 
 % Write surface maps of person/place/object-responsive cortex
-personOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-PersonResponsiveZ'...
-    num2str(zThresh) '_mask.dscalar.nii'];
-placeOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-PlaceResponsiveZ'...
-    num2str(zThresh) '_mask.dscalar.nii'];
-objectOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-ObjectResponsiveZ'...
-    num2str(zThresh) '_mask.dscalar.nii'];
+personOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-PersonVsPlaceObjectResponsive' avgSuffix...
+    zStatSuffix '_mask.dscalar.nii'];
+placeOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-PlaceVsPersonObjectResponsive' avgSuffix...
+    zStatSuffix '_mask.dscalar.nii'];
+objectOutputPath = [diffusionDir '/sub-' subjID spaceStr '_desc-ObjectVsPersonPlaceResponsive' avgSuffix...
+    zStatSuffix '_mask.dscalar.nii'];
 if ~exist(personOutputPath,'file')
     inputPath = [diffusionDir '/sub-' subjID '_task-rest' spaceStr...
-        '_desc-Gradient1_diffusionmap.dscalar.nii'];
+        '_desc-GradientStd2_diffusionmap.dscalar.nii'];
     [~,hdr] = fpp.util.readDataMatrix(inputPath);
     zeroVec = zeros(nCoords,1);
     personVec = zeroVec; personVec(personInd)=1;
@@ -113,14 +153,15 @@ sizeVec(allInd) = 2*scatterSize;
 
 figure('Position',[200 200 figSize figSize]);
  % NOTE: Alpha properties require MATLAB >=2021a
-s = scatter(100*diffmap(noneInd,1),100*diffmap(noneInd,2),sizeVec(noneInd),...
+s = scatter(100*diffmapRot(noneInd,1),100*diffmapRot(noneInd,2),sizeVec(noneInd),...
     colorMat(noneInd,:),'filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',.5);
 hold on;
-s2 = scatter(100*diffmap(allInd,1),100*diffmap(allInd,2),sizeVec(allInd),...
+s2 = scatter(100*diffmapRot(allInd,1),100*diffmapRot(allInd,2),sizeVec(allInd),...
     colorMat(allInd,:),'filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',.5); % Put task responses on top
 pbaspect([1 1 1]);
 set(gca,'LineWidth',2,'FontSize',fontSize);
 set(gcf,'Color',[1 1 1]);
+xlim([-3.5 2.5]);
 
 % For ident01, plot map with colored anatomical regions (apex, vis, motor)
 if strcmp(subjID,'ident01')
@@ -148,11 +189,12 @@ if strcmp(subjID,'ident01')
     end
     
     figure('Position',[300 300 figSize figSize]);
-    s3 = scatter(100*diffmap(:,1),100*diffmap(:,2),scatterSize,colorMat,'filled',...
+    s2 = scatter(100*diffmapRot(:,1),100*diffmapRot(:,2),scatterSize,colorMat,'filled',...
         'MarkerFaceAlpha',.7,'MarkerEdgeAlpha',.7);
     pbaspect([1 1 1]);
     set(gca,'LineWidth',2,'FontSize',fontSize);
     set(gcf,'Color',[1 1 1]);
+    xlim([-3.5 2.5]);
     
     % Write whole-brain color map, as label file where each coordinate is a
     % distinct label
@@ -183,3 +225,9 @@ if strcmp(subjID,'ident01')
 end
 
 end
+
+
+
+
+
+

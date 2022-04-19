@@ -5,17 +5,9 @@
 % 
 % Uses gifti and cifti matlab toolboxes, and Freesurfer matlab tools, for
 % dijk and pred2path.
-%
-% Outputs:
-% - responsePath: area by subject cell array of condition by task by run by
-%   coordinate matrices of PSC.
-% - responsePathStd: by-area cell array of cond x task x run x subj x coord
-%   matrices of PSC, interpolated to a standard spatial position measure
-%   across subjects.
 
 studyDir = '/path/to/data';
-subjects = {'ident01','ident02','ident03','ident04','ident05','ident06',...
-    'ident07','ident08','ident09','ident10'};
+subjects = {'ident01','ident02','ident03','ident04','ident05','ident06','ident07','ident08','ident09','ident10'};
 tasks = {'famvisual','famsemantic','famepisodic'};
 condNames = {'FamPerson','Object','FamPlace'};
 runList = [1 3 5];
@@ -32,11 +24,18 @@ areas = {'Left Parietal','Right Parietal','Left Frontal','Right Frontal'};
 nAreas = length(areas);
 hemisByArea = [1 2 1 2];
 
+% Outputs:
+% - responsePath: area by subject cell array of condition by task by run by
+%   coordinate matrices of PSC.
+% - responsePathStd: by-area cell array of cond x task x run x subj x coord
+%   matrices of PSC, interpolated to a standard spatial position measure
+%   across subjects.
+
 % anchorCoords: cell array of surface coordinate matrices (subject by
-%   position), defining ventral to dorsal paths through left/right medial
-%   parietal/frontal cortex. Coords are zero-indexed, converted to
-%   one-indexing below. Picked by hand based on PersonVsPlace contrast in
-%   runs 2 and 4, across tasks (visual, semantic, episodic).
+% position), defining ventral to dorsal paths through left/right medial
+% parietal/frontal cortex. Coords are zero-indexed, converted to
+% one-indexing below. Picked by hand based on PersonVsPlace contrast in
+% runs 2 and 4, across tasks (visual, semantic, episodic).
 
 % Left parietal
 anchorCoords{1} = [ 26072	26246	4088	2209
@@ -89,7 +88,7 @@ anchorCoords{4} = [ 21276	21163	21134	28215	28617	28933
 % Convert wb_view zero-indexed coordinates to one-indexed coords for MATLAB
 for r=1:nAreas, anchorCoords{r} = anchorCoords{r}+1; end
 
-% Interpolation info: x-position grid to resample to, measured in label id 1 to nAnchors
+% Interpolation info: "x" grid to resample to, measured in label id 1 to nAnchors
 pointsBetweenAnchors = 7;   % Number of points between anchors to interpolate to
 for a=1:nAreas
     xPosByArea{a} = linspace(1,size(anchorCoords{a},2),(size(anchorCoords{a},2)-1)*(pointsBetweenAnchors+1)+1);
@@ -189,42 +188,102 @@ for a=1:nAreas
 end
 
 % Line plot with std error across runs
+% Within hemisphere
 for a=1:nAreas
-    nCoords = length(xPosByArea{a});
-    
     % Person, object, and place responses, averaged across tasks
-    figure;
-    linProps.col = {'r','g','b'};
+    if a<3, xTicks = 1:4;
+    else xTicks = 1:6; end
+    figure('Position',[500 500 340 250]);
+    linProps.col = {'r','b'};
     mseb(xPosByArea{a},squeeze(mean(responsePathStdPlotTaskAvg{a},2))',...
         squeeze(std(responsePathStdPlotTaskAvg{a},0,2))'/sqrt(nRuns*nSubs),...
         linProps,1);
+    if a<3
+        xTicks = 1:4;
+        ylim([-1 1.5]);
+        set(gca,'YTick',[-1 0 1]);
+    else
+        xTicks = 1:6;
+        ylim([-.5 .7]);
+        set(gca,'YTick',[-.5 0 .5]);
+    end
     set(gca,'linewidth',2,'FontSize',20);
-    set(gca,'XTickLabel',[],'XTick',xPosByArea{a},'XLim',[1 max(xPosByArea{a})]);
-    xlabel('Position','fontsize',14);
-    ylabel('% signal change','fontsize',14);
-    title([areas{a} ': Responses by condition'],'fontsize',16);
-    legend(condNames,'fontsize',14);
+    set(gca,'XTickLabel',[],'XTick',xTicks,'XLim',[1 max(xPosByArea{a})]);
     set(gcf,'Color',[1 1 1]);
     
     % Person versus place responses, for each task
-    figure;
-    linProps.col = {'r','m','c'};
+    if a<3, xTicks = 1:4;
+    else xTicks = 1:6; end
+    figure('Position',[500 500 340 250]);
+    linProps.col = {[240 200 160]/255, [132 143 162]/255, [45 49 66]/255};
     mseb(xPosByArea{a},squeeze(mean(responsePathStdPlotConByTask{a},2))',...
         squeeze(std(responsePathStdPlotConByTask{a},0,2))'/sqrt(nRuns*nSubs),...
         linProps,1);
+    if a<3
+        xTicks = 1:4;
+        ylim([-1.6 1.5]);
+        set(gca,'YTick',[-1 0 1]);
+    else
+        xTicks = 1:6;
+        ylim([-.5 1.25]);
+        set(gca,'YTick',[-.5 0 .5 1]);
+    end
     set(gca,'linewidth',2,'FontSize',20);
-    set(gca,'XTickLabel',[],'XTick',xPosByArea{a},'XLim',[1 max(xPosByArea{a})]);
-    xlabel('Position','fontsize',14);
-    ylabel('% signal change','fontsize',14);
-    title([areas{a} ': Person vs place responses by task'],'fontsize',16);
-    legend(tasks,'fontsize',14);
+    set(gca,'XTickLabel',[],'XTick',xTicks,'XLim',[1 max(xPosByArea{a})]);
+    set(gcf,'Color',[1 1 1]);
+end
+
+% Average across hemispheres
+areasToAvg = {1:2,3:4};
+for a=1:2
+    % Person, object, and place responses, averaged across tasks
+    if a==2, xTicks = 1:4;
+    else xTicks = 1:6; end
+    figure('Position',[500 500 340 250]);
+    linProps.col = {'r','b'};
+    mseb(xPosByArea{areasToAvg{a}(1)},squeeze(mean([responsePathStdPlotTaskAvg{areasToAvg{a}(1)}...
+        responsePathStdPlotTaskAvg{areasToAvg{a}(2)}],2))',...
+        squeeze(std([responsePathStdPlotTaskAvg{areasToAvg{a}(1)}...
+        responsePathStdPlotTaskAvg{areasToAvg{a}(2)}],0,2))'/sqrt(nRuns*nSubs),...
+        linProps,1);
+    if a==1
+        xTicks = 1:4;
+        ylim([-1 1.5]);
+        set(gca,'YTick',[-1 0 1]);
+    else
+        xTicks = 1:6;
+        ylim([-.5 .7]);
+        set(gca,'YTick',[-.5 0 .5]);
+    end
+    set(gca,'linewidth',2,'FontSize',20);
+    set(gca,'XTickLabel',[],'XTick',xTicks,'XLim',[1 max(xPosByArea{areasToAvg{a}(1)})]);
+    set(gcf,'Color',[1 1 1]);
+    
+    % Person versus place responses, for each task
+    if a==2, xTicks = 1:4;
+    else xTicks = 1:6; end
+    figure('Position',[500 500 340 250]);
+    linProps.col = {[240 200 160]/255, [132 143 162]/255, [45 49 66]/255};
+    mseb(xPosByArea{areasToAvg{a}(1)},squeeze(mean([responsePathStdPlotConByTask{areasToAvg{a}(1)}...
+        responsePathStdPlotConByTask{areasToAvg{a}(2)}],2))',...
+        squeeze(std([responsePathStdPlotConByTask{areasToAvg{a}(1)}...
+        responsePathStdPlotConByTask{areasToAvg{a}(2)}],0,2))'/sqrt(nRuns*nSubs),...
+        linProps,1);
+    if a==1
+        xTicks = 1:4;
+        ylim([-1.6 1.5]);
+        set(gca,'YTick',[-1 0 1]);
+    else
+        xTicks = 1:6;
+        ylim([-.5 1.25]);
+        set(gca,'YTick',[-.5 0 .5 1]);
+    end
+    set(gca,'linewidth',2,'FontSize',20);
+    set(gca,'XTickLabel',[],'XTick',xTicks,'XLim',[1 max(xPosByArea{areasToAvg{a}(1)})]);
     set(gcf,'Color',[1 1 1]);
 end
 
 %% Write data for border file defined by geodesic path.
-% This section outputs face/vertex triplets that can be pasted into an
-% existing .border file to produce a border corresponding to the full
-% geodesic path for a given subject/region.
 
 % Pick area and subject to generate path for
 a = 1;
@@ -234,7 +293,7 @@ s = 1;
 ptsBetweenVerts = 10;
 
 % Constants
-studyDir = '/path/to/data';
+studyDir = '/Freiwald/bdeen/IDENT';
 space = 'individual';
 den = '32k';        % 32k or native
 modelDesc = 'Sm2';

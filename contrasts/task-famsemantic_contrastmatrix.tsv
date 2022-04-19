@@ -2,3 +2,6 @@ Name	Coef1	Coef2	Coef3
 PersonVsPlace	1	0	-1
 PersonVsObject	1	-1	0
 PlaceVsObject	0	-1	1
+PersonVsPlaceObject	2	-1	-1
+PlaceVsPersonObject	-1	-1	2
+ObjectVsPersonPlace	-1	2	-1

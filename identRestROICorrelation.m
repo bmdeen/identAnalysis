@@ -9,16 +9,13 @@
 function identRestROICorrelation(roiDescs,outputDesc)
 
 studyDir = '/path/to/data';
-bidsDir = [studyDir '/derivatives/fpp'];
-subjects = {'ident01','ident02','ident03','ident04','ident05','ident06',...
-    'ident07','ident08','ident09','ident10'};
+subjects = {'ident01','ident02','ident03','ident04','ident05','ident06','ident07','ident08','ident09','ident10'};
 spaceStr = 'fsLR_den-32k';
 nRuns = 6;
 nVols = 300;
 nROIs = length(roiDescs);
 inputDesc = 'preprocGSR';
-outputPath = [bidsDir '/group/space-' spaceStr '_desc-' outputDesc 'N'...
-    int2str(length(subjects)) '_ROICorrelationData.mat'];
+outputPath = [bidsDir '/group/space-' spaceStr '_desc-' outputDesc 'N' int2str(length(subjects)) '_ROICorrelationData.mat'];
 corrMat = zeros(nROIs,nROIs,length(subjects));
 
 for s=1:length(subjects)
@@ -57,7 +54,7 @@ for s=1:length(subjects)
         roiAvgSeries = restMat'*roiAvgMat;  % Time point by ROI matrix of time series
         
         % Compute correlations
-        corrMat(:,:,s) = corr(roiAvgSeries);
+        corrMat(:,:,s) = corrMat(:,:,s) + corr(roiAvgSeries)/nRuns;
         
         disp(['Computed correlation matrix for ' subject ', run ' int2str(r)]);
     end
