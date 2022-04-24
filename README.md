@@ -5,7 +5,7 @@ This repo contains fMRI preprocessing/analysis scripts for the IDENT study, in w
 Links to data and further information:
 * [Methods](https://osf.io/5yjgh/)
 * [Data](https://openneuro.org/datasets/ds003814)
-* [Preprint](https://www.biorxiv.org/content/10.1101/2021.09.23.461550v2)
+* [Preprint](https://www.biorxiv.org/content/10.1101/2021.09.23.461550v3)
 
 Note: scripts for behavioral data analysis are not yet included. Behavioral data first needs to be reformatted to the BIDS spec, and added to the public dataset.
 
