@@ -15,7 +15,7 @@ parcSpace = 'fsLR_den-32k';
 zStatSpace = 'space-individual_res-2_den-32k_desc-Sm2';
 contrastName = 'PersonVsPlace';
 tasks = {'famvisual','famsemantic','famepisodic'};
-fdrDecimalStr = 'q';    % CHANGE TO 'p' FOR NEW MODEL2NDLEVEL SCRIPT!
+fdrDecimalStr = 'p';
 fdrThresh = .01;
 responseMatrix = [];    % Boolean matrix (whether response exists)
                         % Subject by task by area by hemi

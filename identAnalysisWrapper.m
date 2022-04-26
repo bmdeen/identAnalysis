@@ -150,7 +150,7 @@ for s=1:length(subjects)
     for t=1:length(tasks)
         task = tasks{t};
         model2Dir = [analysisDir '/sub-' subjID '_task-' task '_' inputSpaceStr '_model2arma'];
-        fdrDesc = ['FDR' strrep(num2str(fdrThresh),'.','q')];
+        fdrDesc = ['FDR' strrep(num2str(fdrThresh),'.','p')];
         fdrPath = [model2Dir '/sub-' subjID '_task-' task '_' inputSpaceStr contrastName fdrDesc '_fdrthresh'];
         zThresh(s,t) = load(fdrPath);
     end
@@ -226,7 +226,7 @@ for s=1:length(subjects)
                 '-pos-user 3 6 -neg-user -3 -6 -palette-name FSL -disp-pos true');
             disp(zStatName);
             for fd = 1:length(fdrThresh)
-                fdrDesc = [zStatDesc 'FDR' strrep(num2str(fdrThresh(fd)),'.','q')];
+                fdrDesc = [zStatDesc 'FDR' strrep(num2str(fdrThresh(fd)),'.','p')];
                 outputCiftiFDRPath = fpp.bids.changeName(outputCiftiPath,'desc',fdrDesc);
                 zThreshPath = fpp.bids.changeName(zStatPath,'desc',fdrDesc,'fdrthresh','');
                 zThresh = load(zThreshPath);
